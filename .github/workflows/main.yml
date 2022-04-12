@@ -6,7 +6,7 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main ]
 
@@ -19,6 +19,8 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.extract_branch.outputs.branch }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -54,9 +56,24 @@ jobs:
           pip install pytest-cov
           python -m pytest --doctest-modules --ignore=main.py --cov
 
-  deploy:
+  deploy-main:
     needs: test
     runs-on: ubuntu-latest
+    if: ${{ needs.build.outputs.branch == 'main' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY_DEV}}
+          heroku_app_name: "tpexcelia"
+          heroku_email: "cedellec21@excelia-group.com"
+
+  deploy-dev:
+    needs: test
+    runs-on: ubuntu-latest
+    if: ${{ needs.build.outputs.branch == 'dev' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -64,14 +81,14 @@ jobs:
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: "tpexcelia"
+          heroku_app_name: "tpexceliadev"
           heroku_email: "cedellec21@excelia-group.com"
 
-  post_test:
-    needs: deploy
+  post_test-main:
+    if: ${{ needs.build.outputs.branch == 'main' }}
+    needs: deploy-main
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Runs a set of commands using the runners shell
@@ -79,3 +96,16 @@ jobs:
         run: |
           pip install requests
           python -c "import requests; exit(1) if requests.get('https://tpexcelia.herokuapp.com/').status_code != 200 else exit(0)"
+
+  post_test-dev:
+    if: ${{ needs.build.outputs.branch == 'dev' }}
+    needs: deploy-dev
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Runs a set of commands using the runners shell
+      - name:  Test instance is up
+        run: |
+          pip install requests
+          python -c "import requests; exit(1) if requests.get('https://tpexceliadev.herokuapp.com/').status_code != 200 else exit(0)"
