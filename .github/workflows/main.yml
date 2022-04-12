@@ -79,4 +79,4 @@ jobs:
       - name:  Test instance is up
         run: |
           pip install requests
-          python -c "import requests; exit(1) if requests.get('https://tpexcelia.herokuapp.com/').status_code != 200 exit(0)"
+          python -c "import requests; exit(1) if requests.get('https://tpexcelia.herokuapp.com/').status_code != 200 else exit(0)"
