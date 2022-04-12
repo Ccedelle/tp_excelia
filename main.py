@@ -1,4 +1,5 @@
 from helpers import hello
+import sys
 from bottle import route, run
 
 
@@ -7,4 +8,4 @@ def homepage():
     return hello()
 
 
-run(host="localhost", port=8080, reloader=True)
+run(host="0.0.0.0", port=sys.argv[1], reloader=True)
