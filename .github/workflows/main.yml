@@ -19,8 +19,6 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    outputs:
-      branch: ${{ steps.extract_branch.outputs.branch }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -59,7 +57,7 @@ jobs:
   deploy-main:
     needs: test
     runs-on: ubuntu-latest
-    if: ${{ needs.build.outputs.branch == 'main' }}
+    if: ${{ github.ref_name == 'main' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -73,7 +71,7 @@ jobs:
   deploy-dev:
     needs: test
     runs-on: ubuntu-latest
-    if: ${{ needs.build.outputs.branch == 'dev' }}
+    if: ${{ github.ref_name == 'dev' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -85,7 +83,7 @@ jobs:
           heroku_email: "cedellec21@excelia-group.com"
 
   post_test-main:
-    if: ${{ needs.build.outputs.branch == 'main' }}
+    if: ${{ github.ref_name == 'main' }}
     needs: deploy-main
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -98,7 +96,7 @@ jobs:
           python -c "import requests; exit(1) if requests.get('https://tpexcelia.herokuapp.com/').status_code != 200 else exit(0)"
 
   post_test-dev:
-    if: ${{ needs.build.outputs.branch == 'dev' }}
+    if: ${{ github.ref_name == 'dev' }}
     needs: deploy-dev
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
